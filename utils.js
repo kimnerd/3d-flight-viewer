@@ -1,13 +1,28 @@
-import * as THREE from 'three';
+export function encodeLatLonTrajectory(points) {
+  const scale = 20; // 0.05°
+  const maxPts = 48;
+  const subset = points.length > maxPts
+    ? [...Array(maxPts).keys()].map(i => points[Math.floor(i * points.length / maxPts)])
+    : points;
 
-export function latLonAltToVec3(lon, lat, alt) {
-  const phi = (90 - lat) * Math.PI / 180;
-  const theta = (-lon) * Math.PI / 180;
-  const radius = 1 + alt * 3; // 고도 확대 계수 3배
+  const bytes = subset.map(p => {
+    const lat = Math.round((p.lat + 90) * scale);
+    const lon = Math.round((p.lon + 180) * scale);
+    return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
+  }).flat();
 
-  return new THREE.Vector3(
-    radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
+  return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').slice(0, 256);
+}
+
+export function decodeLatLonCode(code) {
+  const bin = atob(code + '='.repeat((4 - code.length % 4) % 4));
+  const bytes = Array.from(bin).map(c => c.charCodeAt(0));
+  const scale = 20;
+  const result = [];
+  for (let i = 0; i + 3 < bytes.length; i += 4) {
+    const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
+    const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
+    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.01 });
+  }
+  return result;
 }
