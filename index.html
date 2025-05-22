@@ -31,11 +31,13 @@
     const controls = new OrbitControls(camera, renderer.domElement);
 
     // 파란 지구
-    const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
-    const texture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/hjtcn/js3d-earth/master/images/earth.jpg');
-    const earthMaterial = new THREE.MeshBasicMaterial({ map: texture });
-    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    scene.add(earth);
+    const texture = new THREE.TextureLoader().load(
+  'https://upload.wikimedia.org/wikipedia/commons/9/97/Equirectangular_projection_SW.jpg'
+);
+const earthMaterial = new THREE.MeshBasicMaterial({ map: texture });
+const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
+const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
     // 위도/경도/고도 → 3D 위치 변환
     function latLonAltToVec3(lon, lat, alt) {
