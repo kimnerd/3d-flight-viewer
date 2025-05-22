@@ -1,7 +1,7 @@
 import { createFlightPath, animateFlights, deleteFlight } from './flightAnimator.js';
 import { renderer, scene, camera, controls } from './main.js';
 
-// ✅ 위도 = tokens[1], 경도 = tokens[2], 고도 = tokens[6] (미터)
+// ✅ 유연하고 안전한 궤적 파서
 function parseCustomFlightData(rawText) {
   const lines = rawText.split('\n').filter(line =>
     /\d+\.\d{4,}/.test(line) && /-?\d+\.\d{4,}/.test(line)
@@ -10,12 +10,18 @@ function parseCustomFlightData(rawText) {
   const parsed = [];
 
   for (const line of lines) {
-    const tokens = line.trim().split(/\s+/);
+    const tokens = line.replace(/\t/g, ' ').trim().split(/\s+/);
+    const nums = tokens
+      .map(t => parseFloat(t.replace(/,/g, '')))
+      .filter(n => !isNaN(n));
 
-    const lat = parseFloat(tokens[1]);
-    const lon = parseFloat(tokens[2]);
-    const altRaw = tokens[6]?.replace(/,/g, '');
-    const alt = altRaw && !isNaN(altRaw) ? parseFloat(altRaw) / 100000 : 0.01;
+    // 위도 = [-90, 90], 경도 = [-180, 180]
+    const lat = nums.find(n => n >= -90 && n <= 90);
+    const lon = nums.find(n => n >= -180 && n <= 180 && n !== lat);
+
+    // 고도 (미터): 보통 100~20000 정도 → 정규화
+    const altRaw = nums.find(n => n > 100 && n < 20000);
+    const alt = altRaw ? altRaw / 100000 : 0.01;
 
     if (!isNaN(lat) && !isNaN(lon)) {
       parsed.push({ lat, lon, alt });
@@ -25,7 +31,7 @@ function parseCustomFlightData(rawText) {
   return parsed;
 }
 
-// ✈️ 궤적 추가 버튼 동작
+// ✈️ Trajectory 추가 버튼
 document.getElementById('addBtn').onclick = () => {
   const raw = document.getElementById('manualInput').value;
   try {
@@ -42,7 +48,7 @@ document.getElementById('addBtn').onclick = () => {
   }
 };
 
-// 📋 UI에 Trajectory 목록 추가
+// 📋 Trajectory 목록 UI 추가
 function addTrajectoryToList(traj) {
   const ul = document.getElementById('trajList');
   const li = document.createElement('li');
