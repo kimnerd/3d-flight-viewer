@@ -8,13 +8,16 @@
     canvas { display: block; }
     #ui {
       position: absolute;
-      top: 10px; left: 10px;
-      background: rgba(255, 255, 255, 0.85);
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
       padding: 12px;
       border-radius: 8px;
       font-family: sans-serif;
       font-size: 14px;
-      width: 320px;
+      width: 330px;
+      max-height: 95%;
+      overflow-y: auto;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     #ui textarea {
@@ -28,9 +31,19 @@
       padding: 6px 12px;
       font-size: 14px;
     }
+    #trajList {
+      margin: 10px 0 0 0;
+      padding-left: 18px;
+    }
+    #trajList li {
+      margin: 6px 0;
+    }
+    #trajList button {
+      margin-left: 8px;
+    }
   </style>
 
-  <!-- ✅ ES module import map for Three.js -->
+  <!-- ✅ Import map for Three.js -->
   <script type="importmap">
     {
       "imports": {
@@ -42,11 +55,15 @@
 <body>
   <div id="ui">
     <strong>Paste your flight trajectory data:</strong><br/>
-    <textarea id="manualInput" placeholder="Paste trajectory text here..."></textarea><br/>
+    <textarea id="manualInput" placeholder="Paste FlightAware-style data here..."></textarea><br/>
     <button id="addBtn">+ Visualize Trajectory</button>
+
+    <hr/>
+    <strong>Trajectories:</strong>
+    <ul id="trajList"></ul>
   </div>
 
-  <!-- ✅ Load modular JS files -->
+  <!-- ✅ JS modules -->
   <script type="module" src="./main.js"></script>
   <script type="module" src="./utils.js"></script>
   <script type="module" src="./flightAnimator.js"></script>
