@@ -1,4 +1,4 @@
-import { createFlightPath, animateFlights } from './flightAnimator.js';
+import { createFlightPath, animateFlights, deleteFlight } from './flightAnimator.js';
 import { renderer, scene, camera, controls } from './main.js';
 
 function parseCustomFlightData(rawText) {
@@ -10,18 +10,8 @@ function parseCustomFlightData(rawText) {
 
   for (const line of lines) {
     const tokens = line.trim().split(/\s+/);
-
-    // 위도 = 첫 번째 소수
-    const latToken = tokens.find(t => /^-?\d+\.\d+$/.test(t));
-    const lat = parseFloat(latToken);
-
-    // 경도 = 위도 다음에 나오는 소수
-    const lonToken = tokens.find((t, i) =>
-      /^-?\d+\.\d+$/.test(t) && tokens.indexOf(t) > tokens.indexOf(latToken)
-    );
-    const lon = parseFloat(lonToken);
-
-    // 고도 = tokens[6] (미터 열 기준), 예: "296" → 0.00296
+    const lat = parseFloat(tokens[1]);
+    const lon = parseFloat(tokens[2]);
     const altToken = tokens[6]?.replace(/,/g, '');
     const alt = altToken && !isNaN(altToken) ? parseFloat(altToken) / 100000 : 0.01;
 
@@ -38,15 +28,30 @@ document.getElementById('addBtn').onclick = () => {
   try {
     const data = parseCustomFlightData(raw);
     if (data.length < 2) {
-      alert("Not enough valid data points found.");
+      alert("Not enough valid data points.");
     } else {
-      createFlightPath(data);
+      const traj = createFlightPath(data);
+      addTrajectoryToList(traj);
     }
   } catch (e) {
-    alert("Failed to parse input flight data.");
+    alert("Failed to parse input.");
     console.error(e);
   }
 };
+
+function addTrajectoryToList(traj) {
+  const ul = document.getElementById('trajList');
+  const li = document.createElement('li');
+  li.textContent = traj.label + ' ';
+  const btn = document.createElement('button');
+  btn.textContent = '❌';
+  btn.onclick = () => {
+    deleteFlight(traj.id);
+    ul.removeChild(li);
+  };
+  li.appendChild(btn);
+  ul.appendChild(li);
+}
 
 function animate() {
   requestAnimationFrame(animate);
