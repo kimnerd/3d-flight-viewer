@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+
+
 export function latLonAltToVec3(lon, lat, alt) {
   const phi = (90 - lat) * Math.PI / 180;
   const theta = (-lon) * Math.PI / 180;
