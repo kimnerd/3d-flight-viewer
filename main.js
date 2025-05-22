@@ -16,6 +16,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 export const controls = new OrbitControls(camera, renderer.domElement);
+controls.minDistance = 1.2; // 지구보다 약간 더 멀게
+controls.maxDistance = 10;
 
 // 🌍 텍스처 입힌 지구
 const texture = new THREE.TextureLoader().load(
