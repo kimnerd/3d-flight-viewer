@@ -28,7 +28,10 @@ export function createFlightPath(flightData) {
 
 export function animateFlights() {
   animatedPlanes.forEach(p => {
-    p.index = (p.index + 1) % p.positions.length;
-    p.airplane.position.copy(p.positions[p.index]);
+    if (p.index < p.positions.length - 1) {
+      p.index+=0.1;
+      p.airplane.position.copy(p.positions[p.index]);
+    }
   });
 }
+
