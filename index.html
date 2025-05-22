@@ -7,8 +7,6 @@
     html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
     canvas { display: block; }
   </style>
-
-  <!-- ✅ importmap: 'three' 모듈 경로 등록 -->
   <script type="importmap">
     {
       "imports": {
@@ -82,6 +80,14 @@
     }
 
     animate();
+
+    // 👉👉👉 창 크기 변경 대응 코드 추가!
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    // 👈👈👈 여기까지 추가
   </script>
 </body>
 </html>
