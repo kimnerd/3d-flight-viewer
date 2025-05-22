@@ -32,7 +32,8 @@
 
     // 파란 지구
     const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
-    const earthMaterial = new THREE.MeshBasicMaterial({ color: 0x3399ff });
+    const texture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/hjtcn/js3d-earth/master/images/earth.jpg');
+    const earthMaterial = new THREE.MeshBasicMaterial({ map: texture });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     scene.add(earth);
 
