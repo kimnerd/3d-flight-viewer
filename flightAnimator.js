@@ -4,6 +4,7 @@ import { latLonAltToVec3 } from './utils.js';
 
 const colors = [0xff0000, 0x00ff00, 0x0000ff];
 export const animatedPlanes = [];
+export const animatedObjects = []; // 지우기용
 
 let flightIndex = 0;
 
@@ -17,7 +18,7 @@ function interpolateGreatCircle(from, to, segments = 32) {
   return points;
 }
 
-export function createFlightPath(flightData) {
+export function createFlightPath(flightData, label = null) {
   const color = colors[flightIndex % colors.length];
 
   const rawPositions = flightData.map(p => latLonAltToVec3(p.lon, p.lat, p.alt));
@@ -42,14 +43,19 @@ export function createFlightPath(flightData) {
   const totalFrames = 600;
   const speed = 1 / totalFrames;
 
+  const id = flightIndex + 1;
+  const obj = { id, label: label || `Trajectory ${id}`, airplane, line };
+
   animatedPlanes.push({
     airplane,
     positions,
     progress: 0,
     speed
   });
-
+  animatedObjects.push(obj);
   flightIndex++;
+
+  return obj; // UI로 넘겨줄 수 있음
 }
 
 export function animateFlights() {
@@ -70,7 +76,20 @@ export function animateFlights() {
       p.airplane.position.lerpVectors(from, to, t);
 
       const dir = new THREE.Vector3().subVectors(to, from).normalize();
-      p.airplane.lookAt(p.airplane.position.clone().add(dir));
+      const axis = new THREE.Vector3(0, 1, 0); // cone 기준 방향
+      const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
+      p.airplane.setRotationFromQuaternion(quaternion);
     }
   });
+}
+
+export function deleteFlight(id) {
+  const obj = animatedObjects.find(o => o.id === id);
+  if (!obj) return;
+
+  scene.remove(obj.airplane);
+  scene.remove(obj.line);
+
+  const idx = animatedObjects.findIndex(o => o.id === id);
+  if (idx >= 0) animatedObjects.splice(idx, 1);
 }
