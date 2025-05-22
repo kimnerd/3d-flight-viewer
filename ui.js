@@ -3,7 +3,7 @@ import { renderer, scene, camera, controls } from './main.js';
 
 function parseCustomFlightData(rawText) {
   const lines = rawText.split('\n').filter(line =>
-    /\d+\.\d+/.test(line) && /-?\d+\.\d+/.test(line) && /\d{3,4}/.test(line)
+    /\d+\.\d+/.test(line) && /-?\d+\.\d+/.test(line)
   );
 
   const parsed = [];
@@ -11,12 +11,19 @@ function parseCustomFlightData(rawText) {
   for (const line of lines) {
     const tokens = line.trim().split(/\s+/);
 
-    const lat = parseFloat(tokens[0]);
-    const lon = parseFloat(tokens[1]);
+    // 위도 = 첫 번째 소수
+    const latToken = tokens.find(t => /^-?\d+\.\d+$/.test(t));
+    const lat = parseFloat(latToken);
 
-    // Find altitude (assumes it's a number like 1234 or 1,234)
-    const altStr = tokens.find(tok => tok.replace(/,/g, '').match(/^\d{3,5}$/));
-    const alt = altStr ? parseFloat(altStr.replace(/,/g, '')) / 100000 : 0.01;
+    // 경도 = 위도 다음에 나오는 소수
+    const lonToken = tokens.find((t, i) =>
+      /^-?\d+\.\d+$/.test(t) && tokens.indexOf(t) > tokens.indexOf(latToken)
+    );
+    const lon = parseFloat(lonToken);
+
+    // 고도 = tokens[6] (미터 열 기준), 예: "296" → 0.00296
+    const altToken = tokens[6]?.replace(/,/g, '');
+    const alt = altToken && !isNaN(altToken) ? parseFloat(altToken) / 100000 : 0.01;
 
     if (!isNaN(lat) && !isNaN(lon)) {
       parsed.push({ lat, lon, alt });
