@@ -1,27 +1,35 @@
 import { createFlightPath, animateFlights, deleteFlight } from './flightAnimator.js';
 import { renderer, scene, camera, controls } from './main.js';
 
-// ✅ 유연하고 안전한 궤적 파서
+// ✅ 구조 기반 + 회복력 있는 파서
 function parseCustomFlightData(rawText) {
   const lines = rawText.split('\n').filter(line =>
-    /\d+\.\d{4,}/.test(line) && /-?\d+\.\d{4,}/.test(line)
+    line.includes(':') && /\d+\.\d{4,}/.test(line)
   );
 
   const parsed = [];
 
   for (const line of lines) {
     const tokens = line.replace(/\t/g, ' ').trim().split(/\s+/);
-    const nums = tokens
+    if (tokens.length < 5) continue; // 빈 줄 또는 불완전 줄 무시
+
+    const numbers = tokens
       .map(t => parseFloat(t.replace(/,/g, '')))
       .filter(n => !isNaN(n));
 
-    // 위도 = [-90, 90], 경도 = [-180, 180]
-    const lat = nums.find(n => n >= -90 && n <= 90);
-    const lon = nums.find(n => n >= -180 && n <= 180 && n !== lat);
+    // 위도 = [-90, 90], 경도 = [-180, 180]에서 추출
+    const lat = numbers.find(n => n >= -90 && n <= 90);
+    const lon = numbers.find(n => n >= -180 && n <= 180 && n !== lat);
 
-    // 고도 (미터): 보통 100~20000 정도 → 정규화
-    const altRaw = nums.find(n => n > 100 && n < 20000);
-    const alt = altRaw ? altRaw / 100000 : 0.01;
+    // 고도 추정: heading("°") 다음 두 번째 숫자
+    let alt = 0.01;
+    const headingIdx = tokens.findIndex(t => t.includes('°'));
+    if (headingIdx >= 0) {
+      const altToken = tokens[headingIdx + 2]?.replace(/,/g, '');
+      if (altToken && !isNaN(altToken)) {
+        alt = parseFloat(altToken) / 100000;
+      }
+    }
 
     if (!isNaN(lat) && !isNaN(lon)) {
       parsed.push({ lat, lon, alt });
@@ -31,7 +39,7 @@ function parseCustomFlightData(rawText) {
   return parsed;
 }
 
-// ✈️ Trajectory 추가 버튼
+// ✈️ 궤적 추가 버튼 동작
 document.getElementById('addBtn').onclick = () => {
   const raw = document.getElementById('manualInput').value;
   try {
@@ -48,7 +56,7 @@ document.getElementById('addBtn').onclick = () => {
   }
 };
 
-// 📋 Trajectory 목록 UI 추가
+// 📋 UI 목록 추가
 function addTrajectoryToList(traj) {
   const ul = document.getElementById('trajList');
   const li = document.createElement('li');
@@ -63,7 +71,7 @@ function addTrajectoryToList(traj) {
   ul.appendChild(li);
 }
 
-// 🔁 애니메이션 루프
+// 🔁 렌더링 루프
 function animate() {
   requestAnimationFrame(animate);
   animateFlights();
