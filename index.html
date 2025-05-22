@@ -42,7 +42,7 @@ scene.add(earth);
     // 위도/경도/고도 → 3D 위치 변환
     function latLonAltToVec3(lon, lat, alt) {
       const phi = (90 - lat) * Math.PI / 180;
-      const theta = (lon + 0) * Math.PI / 180;
+      const theta = (-lon + 0) * Math.PI / 180;
       const radius = 1 + alt;
       return new THREE.Vector3(
         radius * Math.sin(phi) * Math.cos(theta),
