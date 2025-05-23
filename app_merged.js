@@ -113,7 +113,7 @@ function addTrajectoryToList(traj) {
   item.className = 'traj-item';
   item.textContent = `Trajectory ${flights.length}`;
   const del = document.createElement('button');
-  del.textContent = '??;
+  del.textContent = '\u274C'; 
   del.onclick = () => {
     scene.remove(traj.line);
     item.remove();
