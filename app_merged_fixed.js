@@ -75,30 +75,38 @@ function animateFlights() {
 
 // ===== ui.js =====
 function parseCustomFlightData(rawText) {
-  const lines = rawText.split('\n').filter(line =>
-    /\d+\.\d{4,}/.test(line) && /-?\d+\.\d{4,}/.test(line)
-  );
-
-  const parsed = [];
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = [];
 
   for (const line of lines) {
-    const tokens = line.replace(/\t/g, ' ').trim().split(/\s+/);
-    const nums = tokens
-      .map(t => parseFloat(t.replace(/,/g, '')))
-      .filter(n => !isNaN(n));
+    // 소수점 4자리 이상 실수 추출 (lat/lon용)
+    const latlonMatches = line.match(/-?\d+\.\d{4,}/g);
+    if (!latlonMatches || latlonMatches.length < 2) continue;
 
-    const lat = nums.find(n => n >= -90 && n <= 90);
-    const lon = nums.find(n => n >= -180 && n <= 180 && n !== lat);
-    const altRaw = nums.find(n => n > 100 && n < 20000);
-    const alt = altRaw ? altRaw / 100000 : 0.01;
+    const lat = parseFloat(latlonMatches[0]);
+    const lon = parseFloat(latlonMatches[1]);
+
+    // 고도 추출 (방향 화살표 → 뒤로부터 세 번째 숫자)
+    const tokens = line.split(/\s+/);
+    const arrowIdx = tokens.findIndex(t => /^→|↘|↗|↑|↓/.test(t));
+    let alt = 0.05;
+
+    if (arrowIdx !== -1 && tokens.length > arrowIdx + 3) {
+      const altRaw = tokens[arrowIdx + 3].replace(/,/g, '');
+      const altNum = parseInt(altRaw, 10);
+      if (!isNaN(altNum)) {
+        alt = altNum / 100000;
+      }
+    }
 
     if (!isNaN(lat) && !isNaN(lon)) {
-      parsed.push({ lat, lon, alt });
+      result.push({ lat, lon, alt });
     }
   }
 
-  return parsed;
+  return result;
 }
+
 
 
 function addTrajectoryToList(traj) {
