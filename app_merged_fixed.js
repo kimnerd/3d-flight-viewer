@@ -24,13 +24,33 @@ function decodeLatLonCode(code) {
   const bytes = Array.from(bin).map(c => c.charCodeAt(0));
   const scale = 20;
   const result = [];
+
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
     const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
-    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });
+    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });  // 초기 고도 (임시)
   }
+
+  // ✈️ 디코딩 후 고도 보정 (상승 → 순항 → 하강)
+  const N = result.length;
+  const cruiseAlt = 0.06;
+  const groundAlt = 0.01;
+  const ascendLen = Math.floor(N * 0.1);
+  const descendStart = N - ascendLen;
+
+  result.forEach((p, i) => {
+    if (i < ascendLen) {
+      p.alt = groundAlt + (cruiseAlt - groundAlt) * (i / ascendLen);
+    } else if (i >= descendStart) {
+      p.alt = cruiseAlt - (cruiseAlt - groundAlt) * ((i - descendStart) / ascendLen);
+    } else {
+      p.alt = cruiseAlt;
+    }
+  });
+
   return result;
 }
+
 
 // ===== flightAnimator.js =====
 const flights = [];
