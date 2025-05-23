@@ -187,10 +187,15 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+function animateFlights() {
+  // Optional: future animation logic for flying airplane
+}
+
 function animate() {
   requestAnimationFrame(animate);
-  animateFlights();
+  animateFlights();  // 이제 에러 안 남
   controls.update();
   renderer.render(scene, camera);
 }
+
 animate();
