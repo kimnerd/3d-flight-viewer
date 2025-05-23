@@ -75,18 +75,31 @@ function animateFlights() {
 
 // ===== ui.js =====
 function parseCustomFlightData(rawText) {
-  const lines = rawText.split('\\n').filter(l => l.includes('.') && l.includes('-'));
-  const result = [];
+  const lines = rawText.split('\n').filter(line =>
+    /\d+\.\d{4,}/.test(line) && /-?\d+\.\d{4,}/.test(line)
+  );
+
+  const parsed = [];
+
   for (const line of lines) {
-    const tokens = line.trim().split(/\\s+/);
-    const lat = parseFloat(tokens.find(t => /^\\d+\\.\\d+$/.test(t)));
-    const lon = parseFloat(tokens.find(t => /^-?\\d+\\.\\d+$/.test(t)));
-    const altRaw = tokens.find(t => /^\\d{3,5}(,\\d{3})?$/.test(t));
-    const alt = altRaw ? parseInt(altRaw.replace(/,/g, '')) / 100000 : 0.05;
-    if (!isNaN(lat) && !isNaN(lon)) result.push({ lat, lon, alt });
+    const tokens = line.replace(/\t/g, ' ').trim().split(/\s+/);
+    const nums = tokens
+      .map(t => parseFloat(t.replace(/,/g, '')))
+      .filter(n => !isNaN(n));
+
+    const lat = nums.find(n => n >= -90 && n <= 90);
+    const lon = nums.find(n => n >= -180 && n <= 180 && n !== lat);
+    const altRaw = nums.find(n => n > 100 && n < 20000);
+    const alt = altRaw ? altRaw / 100000 : 0.01;
+
+    if (!isNaN(lat) && !isNaN(lon)) {
+      parsed.push({ lat, lon, alt });
+    }
   }
-  return result;
+
+  return parsed;
 }
+
 
 function addTrajectoryToList(traj) {
   const list = document.getElementById('trajectoryList');
