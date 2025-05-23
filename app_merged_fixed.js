@@ -49,7 +49,7 @@ function decodeLatLonCode(code) {
     }
 
     // ✅ 고도 최소 보장 (절대 음수 또는 0 안되게)
-    p.alt = Math.max(alt, 0.01);
+    p.alt = Math.max(alt, 0.1);
   });
 
   return result;
