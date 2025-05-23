@@ -12,7 +12,7 @@ function encodeLatLonTrajectory(points) {
 
   const bytes = subset.map(p => {
     const lat = Math.round((p.lat + 90) * scale);
-    const lon = Math.round((0 - p.lon) * scale);
+    const lon = Math.round((p.lon + 180) * scale); // fixed
     return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
   }).flat();
 
@@ -26,7 +26,7 @@ function decodeLatLonCode(code) {
   const result = [];
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
-    const lon = 180 - ((bytes[i + 2] << 8) + bytes[i + 3]) / scale;
+    const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
     result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });
   }
   return result;
@@ -35,26 +35,39 @@ function decodeLatLonCode(code) {
 // ===== flightAnimator.js =====
 const flights = [];
 function createFlightPath(points) {
+  // Altitude smoothing
+  for (let i = 0; i < points.length; i++) {
+    if (!points[i].alt || points[i].alt < 0.0001) {
+      const prev = points[i - 1]?.alt ?? 0.01;
+      const next = points[i + 1]?.alt ?? prev;
+      points[i].alt = (prev + next) / 2;
+    }
+  }
+  for (let i = 1; i < points.length; i++) {
+    const delta = Math.abs(points[i].alt - points[i - 1].alt);
+    if (delta > 0.01) {
+      points[i].alt = points[i - 1].alt;
+    }
+  }
+
   const geometry = new THREE.BufferGeometry();
   const positions = [];
-
   const earthRadius = 1.0;
-  const earthRadiusKm = 6371;
-  const visualScaleFactor = 1000;
+  const maxAltMeters = 12000;
 
   let sumX = 0, sumY = 0, sumZ = 0;
 
   points.forEach((p, idx) => {
     const phi = (90 - p.lat) * Math.PI / 180;
-  const theta = (180 - p.lon) * Math.PI / 180;
+    const theta = (p.lon + 180) * Math.PI / 180;
 
-  const altMeters = (p.alt ?? 1000) * 100000;  // 입력은 정규화 값, 다시 m로 환산
-  const scale = (altMeters / 12000) * 0.2;
-  const r = 1.0 + scale;
+    const altMeters = (p.alt ?? 1000) * 100000;
+    const scale = (altMeters / maxAltMeters) * 0.2;
+    const r = 1.0 + scale;
 
-  const x = r * Math.sin(phi) * Math.cos(theta);
-  const y = r * Math.cos(phi);
-  const z = r * Math.sin(phi) * Math.sin(theta);
+    const x = r * Math.sin(phi) * Math.cos(theta);
+    const y = r * Math.cos(phi);
+    const z = r * Math.sin(phi) * Math.sin(theta);
 
     console.log(`[DEBUG] Point ${idx}: lat=${p.lat}, lon=${p.lon}, alt=${p.alt} → x=${x.toFixed(3)}, y=${y.toFixed(3)}, z=${z.toFixed(3)}`);
 
@@ -93,7 +106,7 @@ function parseCustomFlightData(rawText) {
     const lon = parseFloat(latlonMatches[1]);
 
     const tokens = line.split(/\s+/);
-    const arrowIdx = tokens.findIndex(t => /^→|↘|↗|↑|↓/.test(t));
+    const arrowIdx = tokens.findIndex(t => /^\u2192|\u2198|\u2197|\u2191|\u2193/.test(t));
     let alt = 0.05;
 
     if (arrowIdx !== -1 && tokens.length > arrowIdx + 3) {
@@ -189,15 +202,12 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-function animateFlights() {
-  // Optional: future animation logic for flying airplane
-}
+function animateFlights() {}
 
 function animate() {
   requestAnimationFrame(animate);
-  animateFlights();  // 이제 에러 안 남
+  animateFlights();
   controls.update();
   renderer.render(scene, camera);
 }
-
 animate();
