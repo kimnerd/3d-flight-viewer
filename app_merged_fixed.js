@@ -198,6 +198,7 @@ const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
   new THREE.MeshBasicMaterial({ map: texture })
 );
+earth.rotation.y = Math.PI;  // ✅ 여기!
 scene.add(earth);
 
 window.addEventListener('resize', () => {
