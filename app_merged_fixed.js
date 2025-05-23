@@ -197,6 +197,8 @@ controls.target.set(0, 0, 0);
 camera.lookAt(0, 0, 0);
 
 const texture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+texture.wrapS = THREE.RepeatWrapping;
+texture.repeat.x = -1;
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
   new THREE.MeshBasicMaterial({ map: texture })
