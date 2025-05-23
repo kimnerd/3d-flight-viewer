@@ -28,7 +28,7 @@ function decodeLatLonCode(code) {
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
     const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
-    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });  // 초기 고도 (임시)
+    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4) }); // alt 임시 제거
   }
 
   // ✈️ 디코딩 후 고도 보정 (상승 → 순항 → 하강)
@@ -39,13 +39,17 @@ function decodeLatLonCode(code) {
   const descendStart = N - ascendLen;
 
   result.forEach((p, i) => {
+    let alt = 0;
     if (i < ascendLen) {
-      p.alt = groundAlt + (cruiseAlt - groundAlt) * (i / ascendLen);
+      alt = groundAlt + (cruiseAlt - groundAlt) * (i / ascendLen);
     } else if (i >= descendStart) {
-      p.alt = cruiseAlt - (cruiseAlt - groundAlt) * ((i - descendStart) / ascendLen);
+      alt = cruiseAlt - (cruiseAlt - groundAlt) * ((i - descendStart) / ascendLen);
     } else {
-      p.alt = cruiseAlt;
+      alt = cruiseAlt;
     }
+
+    // ✅ 고도 최소 보장 (절대 음수 또는 0 안되게)
+    p.alt = Math.max(alt, 0.01);
   });
 
   return result;
