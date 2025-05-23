@@ -12,7 +12,7 @@ function encodeLatLonTrajectory(points) {
 
   const bytes = subset.map(p => {
     const lat = Math.round((p.lat + 90) * scale);
-    const lon = Math.round((p.lon + 180) * scale);
+    const lon = Math.round((180 - p.lon) * scale);  // 좌표계 통일을 위해 반전된 것 기준
     return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
   }).flat();
 
@@ -26,16 +26,14 @@ function decodeLatLonCode(code) {
   const result = [];
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
-    const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
+    const lon = 180 - ((bytes[i + 2] << 8) + bytes[i + 3]) / scale; // 반전 복원
     result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });
   }
   return result;
 }
 
-// ===== flightData.js =====
-const flights = [];
-
 // ===== flightAnimator.js =====
+const flights = [];
 function createFlightPath(points) {
   const geometry = new THREE.BufferGeometry();
   const positions = [];
@@ -44,9 +42,9 @@ function createFlightPath(points) {
   const earthRadiusKm = 6371;
   const visualScaleFactor = 10;
 
-  points.forEach(p => {
+  points.forEach((p, idx) => {
     const phi = (90 - p.lat) * Math.PI / 180;
-    const theta = (180 - p.lon) * Math.PI / 180; // ⬅️ 경도 반전됨
+    const theta = (180 - p.lon) * Math.PI / 180;
 
     const altKm = (p.alt ?? 50) / 1000;
     const r = earthRadius + (altKm / earthRadiusKm) * visualScaleFactor;
@@ -54,6 +52,8 @@ function createFlightPath(points) {
     const x = r * Math.sin(phi) * Math.cos(theta);
     const y = r * Math.cos(phi);
     const z = r * Math.sin(phi) * Math.sin(theta);
+
+    console.log(`[DEBUG] Point ${idx}: lat=${p.lat}, lon=${p.lon}, alt=${p.alt} → x=${x.toFixed(3)}, y=${y.toFixed(3)}, z=${z.toFixed(3)}`);
 
     positions.push(x, y, z);
   });
@@ -70,18 +70,18 @@ function createFlightPath(points) {
 }
 
 function animateFlights() {
-  // Placeholder
+  // optional: trajectory animation
 }
 
 // ===== ui.js =====
 function parseCustomFlightData(rawText) {
-  const lines = rawText.split('\n').filter(l => l.includes('.') && l.includes('-'));
+  const lines = rawText.split('\\n').filter(l => l.includes('.') && l.includes('-'));
   const result = [];
   for (const line of lines) {
-    const tokens = line.trim().split(/\s+/);
-    const lat = parseFloat(tokens.find(t => /^\d+\.\d+$/.test(t)));
-    const lon = parseFloat(tokens.find(t => /^-?\d+\.\d+$/.test(t)));
-    const altRaw = tokens.find(t => /^\d{3,5}(,\d{3})?$/.test(t));
+    const tokens = line.trim().split(/\\s+/);
+    const lat = parseFloat(tokens.find(t => /^\\d+\\.\\d+$/.test(t)));
+    const lon = parseFloat(tokens.find(t => /^-?\\d+\\.\\d+$/.test(t)));
+    const altRaw = tokens.find(t => /^\\d{3,5}(,\\d{3})?$/.test(t));
     const alt = altRaw ? parseInt(altRaw.replace(/,/g, '')) / 100000 : 0.05;
     if (!isNaN(lat) && !isNaN(lon)) result.push({ lat, lon, alt });
   }
@@ -94,7 +94,7 @@ function addTrajectoryToList(traj) {
   item.className = 'traj-item';
   item.textContent = `Trajectory ${flights.length}`;
   const del = document.createElement('button');
-  del.textContent = '\u274C'; 
+  del.textContent = '\\u274C'; 
   del.onclick = () => {
     scene.remove(traj.line);
     item.remove();
@@ -108,21 +108,25 @@ document.getElementById('addBtn').onclick = () => {
   const raw = document.getElementById('manualInput').value;
   try {
     const data = parseCustomFlightData(raw);
+    console.log("[DEBUG] Parsed point count:", data.length);
+    console.table(data);
+
     if (data.length >= 2) {
-      const traj = createFlightPath(data); // 🔁 원본 그대로
+      const traj = createFlightPath(data);
       addTrajectoryToList(traj);
     } else {
       alert("Not enough points.");
     }
   } catch (e) {
+    console.error("[DEBUG] Error parsing flight data:", e);
     alert("Error parsing data.");
   }
 };
 
 document.getElementById('exportCodeBtn').onclick = () => {
   if (!flights.length) return;
-  const fullPoints = flights[flights.length - 1].rawPoints;
-  const code = encodeLatLonTrajectory(fullPoints); // 🔁 공유용만 샘플링
+  const full = flights[flights.length - 1].rawPoints;
+  const code = encodeLatLonTrajectory(full);
   prompt("Share this code (sampled):", code);
 };
 
@@ -130,9 +134,9 @@ document.getElementById('importCodeBtn').onclick = () => {
   const code = prompt("Enter code:");
   if (code) {
     const points = decodeLatLonCode(code);
-    const traj = createFlightPath(points); // 🔁 적은 점이지만 그대로 시각화
+    const traj = createFlightPath(points);
     addTrajectoryToList(traj);
-    alert("Note: imported trajectory is sampled for sharing.");
+    alert("Note: this code is sampled, not full-resolution.");
   }
 };
 
