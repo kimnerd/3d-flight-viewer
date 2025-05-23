@@ -1,4 +1,3 @@
-
 // ===== Import Three.js and OrbitControls =====
 import * as THREE from 'https://esm.sh/three';
 import { OrbitControls } from 'https://esm.sh/three/examples/jsm/controls/OrbitControls.js';
@@ -13,7 +12,7 @@ function encodeLatLonTrajectory(points) {
 
   const bytes = subset.map(p => {
     const lat = Math.round((p.lat + 90) * scale);
-    const lon = Math.round((-p.lon + 0) * scale);
+    const lon = Math.round((p.lon + 180) * scale);
     return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
   }).flat();
 
@@ -34,25 +33,9 @@ function decodeLatLonCode(code) {
 }
 
 // ===== flightData.js =====
-const flightDatabase = {
-  'BA283_2024-07-01': [
-    { lat: 51.47, lon: -0.4543, alt: 0.02 },
-    { lat: 60.11, lon: -20.00, alt: 0.04 },
-    { lat: 65.00, lon: -50.00, alt: 0.06 },
-    { lat: 70.00, lon: -80.00, alt: 0.08 },
-    { lat: 33.94, lon: -118.40, alt: 0.02 }
-  ],
-  'KE902_2024-07-01': [
-    { lat: 37.55, lon: 126.80, alt: 0.02 },
-    { lat: 45.00, lon: 135.00, alt: 0.03 },
-    { lat: 60.00, lon: 160.00, alt: 0.05 },
-    { lat: 64.00, lon: -150.00, alt: 0.07 },
-    { lat: 40.64, lon: -73.78, alt: 0.02 }
-  ]
-};
+const flights = [];
 
 // ===== flightAnimator.js =====
-const flights = [];
 function createFlightPath(points) {
   const geometry = new THREE.BufferGeometry();
   const positions = [];
@@ -63,7 +46,8 @@ function createFlightPath(points) {
 
   points.forEach(p => {
     const phi = (90 - p.lat) * Math.PI / 180;
-    const theta = (p.lon + 180) * Math.PI / 180;
+    const theta = (180 - p.lon) * Math.PI / 180; // ⬅️ 경도 반전됨
+
     const altKm = (p.alt ?? 50) / 1000;
     const r = earthRadius + (altKm / earthRadiusKm) * visualScaleFactor;
 
@@ -86,7 +70,7 @@ function createFlightPath(points) {
 }
 
 function animateFlights() {
-  // Placeholder for future flight animation
+  // Placeholder
 }
 
 // ===== ui.js =====
@@ -96,7 +80,7 @@ function parseCustomFlightData(rawText) {
   for (const line of lines) {
     const tokens = line.trim().split(/\s+/);
     const lat = parseFloat(tokens.find(t => /^\d+\.\d+$/.test(t)));
-    const lon = parseFloat(tokens.find(t => /^-\d+\.\d+$/.test(t)));
+    const lon = parseFloat(tokens.find(t => /^-?\d+\.\d+$/.test(t)));
     const altRaw = tokens.find(t => /^\d{3,5}(,\d{3})?$/.test(t));
     const alt = altRaw ? parseInt(altRaw.replace(/,/g, '')) / 100000 : 0.05;
     if (!isNaN(lat) && !isNaN(lon)) result.push({ lat, lon, alt });
@@ -119,12 +103,13 @@ function addTrajectoryToList(traj) {
   list.appendChild(item);
 }
 
+// ===== 이벤트 핸들러 =====
 document.getElementById('addBtn').onclick = () => {
   const raw = document.getElementById('manualInput').value;
   try {
     const data = parseCustomFlightData(raw);
     if (data.length >= 2) {
-      const traj = createFlightPath(data);
+      const traj = createFlightPath(data); // 🔁 원본 그대로
       addTrajectoryToList(traj);
     } else {
       alert("Not enough points.");
@@ -136,16 +121,18 @@ document.getElementById('addBtn').onclick = () => {
 
 document.getElementById('exportCodeBtn').onclick = () => {
   if (!flights.length) return;
-  const code = encodeLatLonTrajectory(flights[flights.length - 1].rawPoints);
-  prompt("Share this code:", code);
+  const fullPoints = flights[flights.length - 1].rawPoints;
+  const code = encodeLatLonTrajectory(fullPoints); // 🔁 공유용만 샘플링
+  prompt("Share this code (sampled):", code);
 };
 
 document.getElementById('importCodeBtn').onclick = () => {
   const code = prompt("Enter code:");
   if (code) {
     const points = decodeLatLonCode(code);
-    const traj = createFlightPath(points);
+    const traj = createFlightPath(points); // 🔁 적은 점이지만 그대로 시각화
     addTrajectoryToList(traj);
+    alert("Note: imported trajectory is sampled for sharing.");
   }
 };
 
