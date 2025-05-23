@@ -1,5 +1,5 @@
 export function encodeLatLonTrajectory(points) {
-  const scale = 20; // 0.05°
+  const scale = 20;
   const maxPts = 48;
   const subset = points.length > maxPts
     ? [...Array(maxPts).keys()].map(i => points[Math.floor(i * points.length / maxPts)])
@@ -22,7 +22,7 @@ export function decodeLatLonCode(code) {
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
     const lon = ((bytes[i + 2] << 8) + bytes[i + 3]) / scale - 180;
-    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.01 });
+    result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });
   }
   return result;
 }
