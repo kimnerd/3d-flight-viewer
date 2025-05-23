@@ -5,8 +5,12 @@
   <title>3D Flight Viewer</title>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-    #ui { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px; }
+    #ui {
+      position: absolute; top: 10px; left: 10px; z-index: 10;
+      background: rgba(255,255,255,0.9); padding: 10px; border-radius: 5px;
+    }
     textarea { width: 300px; height: 100px; }
+    .traj-item { margin-top: 5px; }
   </style>
   <script type="importmap">
     {
@@ -22,6 +26,7 @@
     <button id="addBtn">➕ Add Trajectory</button>
     <button id="exportCodeBtn">🔐 Export Code</button>
     <button id="importCodeBtn">📥 Import Code</button>
+    <div id="trajectoryList"></div>
   </div>
 
   <script type="module" src="./main.js"></script>
