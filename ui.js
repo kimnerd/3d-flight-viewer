@@ -10,10 +10,25 @@ function parseCustomFlightData(rawText) {
     const lat = parseFloat(tokens.find(t => /^\d+\.\d+$/.test(t)));
     const lon = parseFloat(tokens.find(t => /^-\d+\.\d+$/.test(t)));
     const altRaw = tokens.find(t => /^\d{3,5}(,\d{3})?$/.test(t));
-    const alt = altRaw ? parseInt(altRaw.replace(/,/g, '')) / 100000 : 0.01;
+    const alt = altRaw ? parseInt(altRaw.replace(/,/g, '')) / 100000 : 0.05;
     if (!isNaN(lat) && !isNaN(lon)) result.push({ lat, lon, alt });
   }
   return result;
+}
+
+function addTrajectoryToList(traj) {
+  const list = document.getElementById('trajectoryList');
+  const item = document.createElement('div');
+  item.className = 'traj-item';
+  item.textContent = `Trajectory ${flights.length}`;
+  const del = document.createElement('button');
+  del.textContent = '❌';
+  del.onclick = () => {
+    scene.remove(traj.line);
+    item.remove();
+  };
+  item.appendChild(del);
+  list.appendChild(item);
 }
 
 document.getElementById('addBtn').onclick = () => {
@@ -22,7 +37,7 @@ document.getElementById('addBtn').onclick = () => {
     const data = parseCustomFlightData(raw);
     if (data.length >= 2) {
       const traj = createFlightPath(data);
-      console.log("Trajectory added", traj);
+      addTrajectoryToList(traj);
     } else {
       alert("Not enough points.");
     }
@@ -41,7 +56,8 @@ document.getElementById('importCodeBtn').onclick = () => {
   const code = prompt("Enter code:");
   if (code) {
     const points = decodeLatLonCode(code);
-    createFlightPath(points);
+    const traj = createFlightPath(points);
+    addTrajectoryToList(traj);
   }
 };
 
