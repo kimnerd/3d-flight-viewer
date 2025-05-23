@@ -1,9 +1,9 @@
 // ===== File: utils.js =====
-export function encodeFlightData(data) {
+function encodeFlightData(data) {
   return btoa(JSON.stringify(data));
 }
 
-export function decodeFlightData(encoded) {
+function decodeFlightData(encoded) {
   try {
     return JSON.parse(atob(encoded));
   } catch (e) {
@@ -13,15 +13,12 @@ export function decodeFlightData(encoded) {
 }
 
 // ===== File: flightData.js =====
-export const flights = [];
+const flights = [];
 
 // ===== File: flightAnimator.js =====
-import * as THREE from 'three';
-import { flights } from './flightData.js';
-
 let airplane;
 
-export function createFlightPath(points) {
+function createFlightPath(points, THREE) {
   const geometry = new THREE.BufferGeometry();
   const vertices = new Float32Array(points.length * 3);
   points.forEach((point, i) => {
@@ -35,7 +32,7 @@ export function createFlightPath(points) {
   return line;
 }
 
-export function animateFlight(path, scene, onFinish) {
+function animateFlight(path, scene, THREE, onFinish) {
   const positions = path.geometry.attributes.position.array;
   const pointCount = positions.length / 3;
 
@@ -63,25 +60,20 @@ export function animateFlight(path, scene, onFinish) {
 }
 
 // ===== File: ui.js =====
-import { encodeFlightData, decodeFlightData } from './utils.js';
-import { flights } from './flightData.js';
-
-export function setupUI(scene, animateFlight, createFlightPath) {
+function setupUI(scene, animateFlight, createFlightPath, THREE) {
   document.getElementById('startBtn').onclick = () => {
     const input = document.getElementById('flightInput').value;
     const flightData = decodeFlightData(input);
     if (!flightData) return;
 
-    const path = createFlightPath(flightData);
+    const path = createFlightPath(flightData, THREE);
     scene.add(path);
-    animateFlight(path, scene);
+    animateFlight(path, scene, THREE);
   };
 }
 
 // ===== File: main.js =====
-import * as THREE from 'three';
-import { setupUI } from './ui.js';
-import { animateFlight, createFlightPath } from './flightAnimator.js';
+import * as THREE from 'https://cdn.skypack.dev/three';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -97,4 +89,4 @@ function animate() {
 }
 
 animate();
-setupUI(scene, animateFlight, createFlightPath);
+setupUI(scene, animateFlight, createFlightPath, THREE);
