@@ -183,16 +183,15 @@ document.getElementById('importCodeBtn').onclick = () => {
 // ===== main.js =====
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-// ✅ 수정된 카메라 위치와 시점 설정
 camera.position.set(0, 0, 3);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0);
-camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true }); // ✅ renderer 먼저
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement); // ✅ 그 다음 controls
+controls.target.set(0, 0, 0);
+camera.lookAt(0, 0, 0);
 
 const texture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
 const earth = new THREE.Mesh(
