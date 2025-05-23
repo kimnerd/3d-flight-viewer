@@ -62,7 +62,7 @@ console.log(`[DEBUG END] lat=${points[points.length - 1].lat}, lon=${points[poin
 
   points.forEach((p, idx) => {
     const phi = (90 - p.lat) * Math.PI / 180;
-    const theta = (p.lon + 180) * Math.PI / 180;
+    const theta = (-p.lon + 180) * Math.PI / 180;
 
     const altMeters = (p.alt ?? 1000) * 100000;
     const scale = (altMeters / maxAltMeters) * 0.2;
@@ -198,7 +198,7 @@ camera.lookAt(0, 0, 0);
 
 const texture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
 texture.wrapS = THREE.RepeatWrapping;
-texture.repeat.x = -1;
+texture.repeat.x = 1;
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
   new THREE.MeshBasicMaterial({ map: texture })
