@@ -46,13 +46,15 @@ function createFlightPath(points) {
 
   points.forEach((p, idx) => {
     const phi = (90 - p.lat) * Math.PI / 180;
-    const theta = (180 - p.lon) * Math.PI / 180;
-    const altKm = (p.alt ?? 50) / 1000;
-    const r = earthRadius + (altKm / earthRadiusKm) * visualScaleFactor;
+  const theta = (180 - p.lon) * Math.PI / 180;
 
-    const x = r * Math.sin(phi) * Math.cos(theta);
-    const y = r * Math.cos(phi);
-    const z = r * Math.sin(phi) * Math.sin(theta);
+  const altMeters = (p.alt ?? 1000) * 100000;  // 입력은 정규화 값, 다시 m로 환산
+  const scale = (altMeters / 12000) * 0.2;
+  const r = 1.0 + scale;
+
+  const x = r * Math.sin(phi) * Math.cos(theta);
+  const y = r * Math.cos(phi);
+  const z = r * Math.sin(phi) * Math.sin(theta);
 
     console.log(`[DEBUG] Point ${idx}: lat=${p.lat}, lon=${p.lon}, alt=${p.alt} → x=${x.toFixed(3)}, y=${y.toFixed(3)}, z=${z.toFixed(3)}`);
 
