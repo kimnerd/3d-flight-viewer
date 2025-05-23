@@ -36,6 +36,9 @@ function decodeLatLonCode(code) {
 const flights = [];
 function createFlightPath(points) {
   // Altitude smoothing
+  console.log(`[DEBUG START] lat=${points[0].lat}, lon=${points[0].lon}`);
+console.log(`[DEBUG END] lat=${points[points.length - 1].lat}, lon=${points[points.length - 1].lon}`);
+
   for (let i = 0; i < points.length; i++) {
     if (!points[i].alt || points[i].alt < 0.0001) {
       const prev = points[i - 1]?.alt ?? 0.01;
