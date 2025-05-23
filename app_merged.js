@@ -1,5 +1,9 @@
 
-// ===== File: utils.js =====
+// ===== Import Three.js and OrbitControls =====
+import * as THREE from 'https://esm.sh/three';
+import { OrbitControls } from 'https://esm.sh/three/examples/jsm/controls/OrbitControls.js';
+
+// ===== utils.js =====
 function encodeLatLonTrajectory(points) {
   const scale = 20;
   const maxPts = 48;
@@ -15,6 +19,7 @@ function encodeLatLonTrajectory(points) {
 
   return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').slice(0, 256);
 }
+
 function decodeLatLonCode(code) {
   const bin = atob(code + '='.repeat((4 - code.length % 4) % 4));
   const bytes = Array.from(bin).map(c => c.charCodeAt(0));
@@ -28,7 +33,7 @@ function decodeLatLonCode(code) {
   return result;
 }
 
-// ===== File: flightData.js =====
+// ===== flightData.js =====
 const flightDatabase = {
   'BA283_2024-07-01': [
     { lat: 51.47, lon: -0.4543, alt: 0.02 },
@@ -46,7 +51,7 @@ const flightDatabase = {
   ]
 };
 
-// ===== File: flightAnimator.js =====
+// ===== flightAnimator.js =====
 const flights = [];
 function createFlightPath(points) {
   const geometry = new THREE.BufferGeometry();
@@ -54,16 +59,12 @@ function createFlightPath(points) {
 
   const earthRadius = 1.0;
   const earthRadiusKm = 6371;
-  const visualScaleFactor = 10;  // ?쒓컖??怨좊룄 ?뺣? 諛곗쑉 (議곗젙 媛??
+  const visualScaleFactor = 10;
 
   points.forEach(p => {
     const phi = (90 - p.lat) * Math.PI / 180;
     const theta = (p.lon + 180) * Math.PI / 180;
-
-    // 怨좊룄(m) ??km 蹂?? 湲곕낯 50m
     const altKm = (p.alt ?? 50) / 1000;
-
-    // 吏援?諛섍꼍 + 怨좊룄 (?ㅼ???蹂댁젙)
     const r = earthRadius + (altKm / earthRadiusKm) * visualScaleFactor;
 
     const x = r * Math.sin(phi) * Math.cos(theta);
@@ -74,10 +75,8 @@ function createFlightPath(points) {
   });
 
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-
   const color = new THREE.Color(Math.random(), Math.random(), Math.random());
-  const material = new THREE.LineBasicMaterial({ color, linewidth: 2, transparent: false, opacity: 1 });
-
+  const material = new THREE.LineBasicMaterial({ color });
   const line = new THREE.Line(geometry, material);
   scene.add(line);
 
@@ -85,14 +84,12 @@ function createFlightPath(points) {
   flights.push(traj);
   return traj;
 }
+
 function animateFlights() {
-  // ?꾩슂??寃쎌슦 ?좊땲硫붿씠??濡쒖쭅 異붽?
+  // Placeholder for future flight animation
 }
 
-// ===== File: ui.js =====
-
-
-
+// ===== ui.js =====
 function parseCustomFlightData(rawText) {
   const lines = rawText.split('\n').filter(l => l.includes('.') && l.includes('-'));
   const result = [];
@@ -152,15 +149,7 @@ document.getElementById('importCodeBtn').onclick = () => {
   }
 };
 
-function animate() {
-  requestAnimationFrame(animate);
-  animateFlights();
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-// ===== File: main.js =====
+// ===== main.js =====
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 3;
@@ -181,3 +170,11 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+function animate() {
+  requestAnimationFrame(animate);
+  animateFlights();
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
