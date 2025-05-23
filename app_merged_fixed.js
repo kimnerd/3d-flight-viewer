@@ -12,7 +12,7 @@ function encodeLatLonTrajectory(points) {
 
   const bytes = subset.map(p => {
     const lat = Math.round((p.lat + 90) * scale);
-    const lon = Math.round((180 - p.lon) * scale);  // 좌표계 통일을 위해 반전된 것 기준
+    const lon = Math.round((180 - p.lon) * scale);
     return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
   }).flat();
 
@@ -26,7 +26,7 @@ function decodeLatLonCode(code) {
   const result = [];
   for (let i = 0; i + 3 < bytes.length; i += 4) {
     const lat = ((bytes[i] << 8) + bytes[i + 1]) / scale - 90;
-    const lon = 180 - ((bytes[i + 2] << 8) + bytes[i + 3]) / scale; // 반전 복원
+    const lon = 180 - ((bytes[i + 2] << 8) + bytes[i + 3]) / scale;
     result.push({ lat: +lat.toFixed(4), lon: +lon.toFixed(4), alt: 0.05 });
   }
   return result;
@@ -42,10 +42,11 @@ function createFlightPath(points) {
   const earthRadiusKm = 6371;
   const visualScaleFactor = 10;
 
+  let sumX = 0, sumY = 0, sumZ = 0;
+
   points.forEach((p, idx) => {
     const phi = (90 - p.lat) * Math.PI / 180;
     const theta = (180 - p.lon) * Math.PI / 180;
-
     const altKm = (p.alt ?? 50) / 1000;
     const r = earthRadius + (altKm / earthRadiusKm) * visualScaleFactor;
 
@@ -55,8 +56,16 @@ function createFlightPath(points) {
 
     console.log(`[DEBUG] Point ${idx}: lat=${p.lat}, lon=${p.lon}, alt=${p.alt} → x=${x.toFixed(3)}, y=${y.toFixed(3)}, z=${z.toFixed(3)}`);
 
+    sumX += x; sumY += y; sumZ += z;
     positions.push(x, y, z);
   });
+
+  const cx = sumX / points.length;
+  const cy = sumY / points.length;
+  const cz = sumZ / points.length;
+  console.log(`[DEBUG] Center: x=${cx}, y=${cy}, z=${cz}`);
+  controls.target.set(cx, cy, cz);
+  camera.lookAt(cx, cy, cz);
 
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   const color = new THREE.Color(Math.random(), Math.random(), Math.random());
@@ -69,24 +78,18 @@ function createFlightPath(points) {
   return traj;
 }
 
-function animateFlights() {
-  // optional: trajectory animation
-}
-
 // ===== ui.js =====
 function parseCustomFlightData(rawText) {
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
   const result = [];
 
   for (const line of lines) {
-    // 소수점 4자리 이상 실수 추출 (lat/lon용)
     const latlonMatches = line.match(/-?\d+\.\d{4,}/g);
     if (!latlonMatches || latlonMatches.length < 2) continue;
 
     const lat = parseFloat(latlonMatches[0]);
     const lon = parseFloat(latlonMatches[1]);
 
-    // 고도 추출 (방향 화살표 → 뒤로부터 세 번째 숫자)
     const tokens = line.split(/\s+/);
     const arrowIdx = tokens.findIndex(t => /^→|↘|↗|↑|↓/.test(t));
     let alt = 0.05;
@@ -107,15 +110,16 @@ function parseCustomFlightData(rawText) {
   return result;
 }
 
-
-
 function addTrajectoryToList(traj) {
   const list = document.getElementById('trajectoryList');
   const item = document.createElement('div');
   item.className = 'traj-item';
   item.textContent = `Trajectory ${flights.length}`;
   const del = document.createElement('button');
-  del.textContent = '\\u274C'; 
+  del.textContent = '❌';
+  del.style.marginLeft = '6px';
+  del.style.cursor = 'pointer';
+  del.title = 'Remove trajectory';
   del.onclick = () => {
     scene.remove(traj.line);
     item.remove();
