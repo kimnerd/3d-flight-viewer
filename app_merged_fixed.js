@@ -40,7 +40,7 @@ function createFlightPath(points) {
 
   const earthRadius = 1.0;
   const earthRadiusKm = 6371;
-  const visualScaleFactor = 10;
+  const visualScaleFactor = 1000;
 
   let sumX = 0, sumY = 0, sumZ = 0;
 
