@@ -12,7 +12,7 @@ function encodeLatLonTrajectory(points) {
 
   const bytes = subset.map(p => {
     const lat = Math.round((p.lat + 90) * scale);
-    const lon = Math.round((180 - p.lon) * scale);
+    const lon = Math.round((0 - p.lon) * scale);
     return [(lat >> 8) & 0xff, lat & 0xff, (lon >> 8) & 0xff, lon & 0xff];
   }).flat();
 
