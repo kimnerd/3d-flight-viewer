@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>3D Flight Viewer</title>
   <style>
     body {
@@ -34,12 +34,12 @@
 </head>
 <body>
   <div id="ui">
-    <textarea id="flightInput" placeholder="Paste encoded flight data here"></textarea><br>
+    <textarea id="flightInput" placeholder="Paste encoded flight data here"></textarea><br />
     <button id="startBtn">Start Flight</button>
   </div>
 
-  <!-- 통합된 모듈 기반 app.js 사용 -->
-  <script type="module" src="app.js"></script>
+  <!-- ✅ 통합된 app_merged.js를 모듈로 불러오기 -->
+  <script type="module" src="./app_merged.js"></script>
 </body>
 </html>
 
